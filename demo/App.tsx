@@ -66,7 +66,8 @@ class App extends Component<any, any> {
     }
 
     render() {
-        return (<div>
+        // console.log(this.state.tableProps)
+        return (<div style={{ padding: "40px 0", height: '500px' }}>
             {this.renderMode()}
             <DataTable
                 setProps={this.setProps()}

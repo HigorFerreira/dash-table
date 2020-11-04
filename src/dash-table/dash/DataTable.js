@@ -1,5 +1,5 @@
 import * as R from 'ramda';
-import React, {Component, lazy, Suspense} from 'react';
+import React, {Component, lazy, Suspense, useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import {asyncDecorator} from '@plotly/dash-component-plugins';
 
@@ -9,6 +9,7 @@ import genRandomId from 'dash-table/utils/generate';
 import isValidProps from './validate';
 import Sanitizer from './Sanitizer';
 import LazyLoader from 'dash-table/LazyLoader';
+import { render } from 'react-dom';
 
 /**
  * Dash DataTable is an interactive table component designed for
@@ -21,12 +22,82 @@ import LazyLoader from 'dash-table/LazyLoader';
  */
 export default class DataTable extends Component {
     render() {
-        return (
-            <Suspense fallback={null}>
-                <RealDataTable {...this.props} />
-            </Suspense>
-        );
+        return <HigorsTable { ...this.props } />
     }
+}
+
+const HigorsTable = props => {
+
+    const [ containerHeight, setContainerHeight ] = useState(undefined);
+    const [ renders, setRenders ] = useState(0);
+    const [ toggle, setToggle ] = useState(false);
+    const emptyDiv = useRef({});
+
+    // useEffect(() => {
+    //     console.log("Render", renders)
+    // }, [ renders ])
+
+    useEffect(() => {
+        setRenders(renders + 1);
+    }, [ containerHeight, toggle ]);
+
+    useEffect(() => {
+        // setRenders(renders + 1);
+        if(renders > 0){
+        }
+        else{
+            const parentContainer = emptyDiv.current.parentNode
+            const { height } = parentContainer.getBoundingClientRect()
+            const paddings = [
+                parseFloat(getComputedStyle(parentContainer)['paddingTop']),
+                parseFloat(getComputedStyle(parentContainer)['paddingBottom']),
+            ]
+            const containerHeight = height - paddings[0] - paddings[1];
+            
+            setContainerHeight(containerHeight);
+        }
+    }, [])
+
+    // console.log(props.style_cell)
+    const _page_size = props.page_size;
+    const _cell_height = props.style_cell ?
+        (props.style_cell.height ? props.style_cell.height : 30) :
+        30
+
+    props.trim_from_top = props.trim_from_top || _cell_height;
+    props.trim_from_bottom = props.trim_from_bottom || 44;
+
+    // console.log(containerHeight, props.trim_from_top, props.trim_from_bottom)
+    const avaiable_height = containerHeight - props.trim_from_top - props.trim_from_bottom;
+    // console.log(avaiable_height)
+
+    props.page_size = _page_size ? _page_size : parseInt(avaiable_height/_cell_height);
+    // console.log("page_size", props.page_size);
+    
+    props.style_table = _page_size ? props.style_table :
+    {
+        ...props.style_table,
+        minHeight: undefined,
+        maxHeight: undefined,
+        height: undefined,
+    }
+
+    // console.log(props, containerHeight);
+
+    // setTimeout(() => {
+    //     setToggle(!toggle)
+    // }, 3000);
+
+    /**
+     * Note: Thead --> 30px, pagination driver --> 44px
+     */
+    return renders > 0 ?
+    (
+        <Suspense fallback={null}>
+            <RealDataTable {...props} />
+        </Suspense>
+    ) :
+    <div ref={ emptyDiv } ></div>
 }
 
 const RealDataTable = asyncDecorator(DataTable, LazyLoader.table);
@@ -34,7 +105,6 @@ const RealDataTable = asyncDecorator(DataTable, LazyLoader.table);
 export const defaultProps = {
     page_action: 'native',
     page_current: 0,
-    page_size: 250,
 
     css: [],
     filter_query: '',
@@ -1417,7 +1487,18 @@ export const propTypes = {
      * local: window.localStorage, data is kept after the browser quit.
      * session: window.sessionStorage, data is cleared once the browser quit.
      */
-    persistence_type: PropTypes.oneOf(['local', 'session', 'memory'])
+    persistence_type: PropTypes.oneOf(['local', 'session', 'memory']),
+
+    /**
+     * When page_size isn't specified, the number of rows is automatically setled.
+     * trim_from_top trims table header's pixels to calc the avaiable pixel's space to put rows amount
+     */
+    trim_from_top: PropTypes.number,
+    /**
+     * When page_size isn't specified, the number of rows is automatically setled.
+     * trim_from_bottom trims table pagination element size to calc the avaiable pixel's space to put rows amount
+     */
+    trim_from_bottom: PropTypes.number,
 };
 
 DataTable.persistenceTransforms = {
