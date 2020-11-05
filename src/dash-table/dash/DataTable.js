@@ -1,5 +1,5 @@
 import * as R from 'ramda';
-import React, {Component, lazy, Suspense, useState, useEffect, useRef } from 'react';
+import React, {Component, lazy, cloneElement, Suspense, useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import {asyncDecorator} from '@plotly/dash-component-plugins';
 
@@ -28,14 +28,25 @@ export default class DataTable extends Component {
 
 const HigorsTable = props => {
 
+    const { setProps } = props;
     const [ containerHeight, setContainerHeight ] = useState(undefined);
     const [ renders, setRenders ] = useState(0);
+    const [ pageSize, setPageSize ] = useState(undefined);
     const [ toggle, setToggle ] = useState(false);
+    
     const emptyDiv = useRef({});
+    const table = useRef({});
 
     // useEffect(() => {
     //     console.log("Render", renders)
     // }, [ renders ])
+
+    useEffect(() => {
+        console.log("Page size", pageSize);
+        setProps({
+            page_size: pageSize
+        })
+    }, [pageSize]);
 
     useEffect(() => {
         setRenders(renders + 1);
@@ -56,6 +67,10 @@ const HigorsTable = props => {
             
             setContainerHeight(containerHeight);
         }
+
+        setTimeout(() => {
+            setPageSize(table.current.props.page_size);
+        }, 250);
     }, [])
 
     // console.log(props.style_cell)
@@ -94,7 +109,7 @@ const HigorsTable = props => {
     return renders > 0 ?
     (
         <Suspense fallback={null}>
-            <RealDataTable {...props} />
+            <RealDataTable {...props} ref={ table } />
         </Suspense>
     ) :
     <div ref={ emptyDiv } ></div>
