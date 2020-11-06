@@ -29,90 +29,48 @@ export default class DataTable extends Component {
 const HigorsTable = props => {
 
     const { setProps } = props;
-    const [ containerHeight, setContainerHeight ] = useState(undefined);
-    const [ renders, setRenders ] = useState(0);
-    const [ pageSize, setPageSize ] = useState(undefined);
-    const [ toggle, setToggle ] = useState(false);
-    
-    const emptyDiv = useRef({});
     const table = useRef({});
 
-    // useEffect(() => {
-    //     console.log("Render", renders)
-    // }, [ renders ])
-
     useEffect(() => {
-        console.log("Page size", pageSize);
+        const parentContainer = table.current.parentNode
+        const { height } = parentContainer.getBoundingClientRect()
+        const paddings = [
+            parseFloat(getComputedStyle(parentContainer)['paddingTop']),
+            parseFloat(getComputedStyle(parentContainer)['paddingBottom']),
+        ]
+        const containerHeight = height - paddings[0] - paddings[1];
+
+        const _cell_height = props.style_cell ?
+            (props.style_cell.height ? props.style_cell.height : 30) :
+            30
+
+        const trim_from_top = props.trim_from_top || _cell_height;
+        const trim_from_bottom = props.trim_from_bottom || 44;
+
+        const avaiable_height = containerHeight - trim_from_top - trim_from_bottom;
+        const page_size = parseInt(avaiable_height/_cell_height);
+        
+        const style_table = {
+            ...props.style_table,
+            minHeight: undefined,
+            maxHeight: undefined,
+            height: undefined,
+        }
+
+
+        console.log("page_size", page_size)
         setProps({
-            page_size: pageSize
+            page_size,
+            style_table,
         })
-    }, [pageSize]);
 
-    useEffect(() => {
-        setRenders(renders + 1);
-    }, [ containerHeight, toggle ]);
-
-    useEffect(() => {
-        // setRenders(renders + 1);
-        if(renders > 0){
-        }
-        else{
-            const parentContainer = emptyDiv.current.parentNode
-            const { height } = parentContainer.getBoundingClientRect()
-            const paddings = [
-                parseFloat(getComputedStyle(parentContainer)['paddingTop']),
-                parseFloat(getComputedStyle(parentContainer)['paddingBottom']),
-            ]
-            const containerHeight = height - paddings[0] - paddings[1];
-            
-            setContainerHeight(containerHeight);
-        }
-
-        setTimeout(() => {
-            setPageSize(table.current.props.page_size);
-        }, 250);
     }, [])
 
-    // console.log(props.style_cell)
-    const _page_size = props.page_size;
-    const _cell_height = props.style_cell ?
-        (props.style_cell.height ? props.style_cell.height : 30) :
-        30
-
-    props.trim_from_top = props.trim_from_top || _cell_height;
-    props.trim_from_bottom = props.trim_from_bottom || 44;
-
-    // console.log(containerHeight, props.trim_from_top, props.trim_from_bottom)
-    const avaiable_height = containerHeight - props.trim_from_top - props.trim_from_bottom;
-    // console.log(avaiable_height)
-
-    props.page_size = _page_size ? _page_size : parseInt(avaiable_height/_cell_height);
-    // console.log("page_size", props.page_size);
-    
-    props.style_table = _page_size ? props.style_table :
-    {
-        ...props.style_table,
-        minHeight: undefined,
-        maxHeight: undefined,
-        height: undefined,
-    }
-
-    // console.log(props, containerHeight);
-
-    // setTimeout(() => {
-    //     setToggle(!toggle)
-    // }, 3000);
-
-    /**
-     * Note: Thead --> 30px, pagination driver --> 44px
-     */
-    return renders > 0 ?
-    (
+    return <div ref={ table }>
         <Suspense fallback={null}>
             <RealDataTable {...props} ref={ table } />
         </Suspense>
-    ) :
-    <div ref={ emptyDiv } ></div>
+    </div>
 }
 
 const RealDataTable = asyncDecorator(DataTable, LazyLoader.table);
@@ -120,6 +78,7 @@ const RealDataTable = asyncDecorator(DataTable, LazyLoader.table);
 export const defaultProps = {
     page_action: 'native',
     page_current: 0,
+    page_size: 0,
 
     css: [],
     filter_query: '',
