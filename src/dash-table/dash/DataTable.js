@@ -57,6 +57,8 @@ const HigorsTable = props => {
             height: undefined,
         }
 
+        console.log("page_size", page_size);
+        console.log("style_table", style_table);
         setProps({
             page_size,
             style_table,
