@@ -21,6 +21,7 @@ export default class PageNavigation extends Component<IPageNavigationProps> {
     };
 
     render() {
+        console.log("Navigation", this.props);
         const {paginator, page_current} = this.props;
 
         if (paginator.lastPage !== undefined && paginator.lastPage <= 0) {
