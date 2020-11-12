@@ -31,7 +31,7 @@ const HigorsTable = props => {
     const { setProps } = props;
     const table = useRef({});
 
-    useEffect(() => {
+    const calcPageSize = () => {
         const parentContainer = table.current.parentNode
         const { height } = parentContainer.getBoundingClientRect()
         const paddings = [
@@ -57,12 +57,29 @@ const HigorsTable = props => {
             height: undefined,
         }
 
+        return [ page_size, style_table ];
+    }
+
+    useEffect(() => {
+        const [ page_size, style_table ] = calcPageSize();
         console.log("page_size", page_size);
         console.log("style_table", style_table);
         setProps({
             page_size,
             style_table,
-        })
+        });
+        for(let i = 50; i < 2000; i += 100){
+            setTimeout(() => {
+                const [ page_size, style_table ] = calcPageSize();
+                console.log("Recalculating table");
+                console.log("page_size", page_size);
+                console.log("style_table", style_table);
+                setProps({
+                    page_size,
+                    style_table,
+                });
+            }, i);
+        }
 
     }, [])
 
